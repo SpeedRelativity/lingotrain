@@ -6,11 +6,8 @@
  *        npx tsx scripts/test-prompt.ts        (runs all cases)
  */
 
-import { config } from "dotenv";
 import { generateTurnGemini } from "../lib/llm/providers/gemini";
 import { TurnResponseSchema } from "../lib/llm/schema";
-
-config({ path: ".env.local" });
 
 interface TestCase {
   id: string;
