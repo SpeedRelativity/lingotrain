@@ -2,9 +2,11 @@
 import { create } from "zustand";
 import type { TrayItem } from "@/lib/llm/schema";
 
+export type TrayItemWithMeta = TrayItem & { id: string; turn_index?: number };
+
 interface TrayState {
-  items: Array<TrayItem & { id: string }>;
-  addItems: (items: TrayItem[]) => void;
+  items: TrayItemWithMeta[];
+  addItems: (items: Array<TrayItem & { turn_index?: number }>) => void;
   clear: () => void;
 }
 

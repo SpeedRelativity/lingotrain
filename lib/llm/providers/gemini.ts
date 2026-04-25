@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { YUKI_SYSTEM_PROMPT, buildConversationMessages } from "../prompts/yuki-system";
-import { TurnResponseSchema, type TurnResponse } from "../schema";
+import { buildSystemPrompt, buildConversationMessages } from "../prompts/yuki-system";
+import { TurnResponseSchema, type TurnResponse, type Level } from "../schema";
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -10,11 +10,11 @@ function getClient() {
 
 export async function generateTurnGemini(
   userText: string,
-  history: Array<{ role: "user" | "yuki"; text: string }>
+  history: Array<{ role: "user" | "yuki"; text: string }>,
+  level: Level
 ): Promise<TurnResponse> {
   let builtHistory = buildConversationMessages(history);
 
-  // Gemini requires history to start with a user turn
   if (builtHistory.length > 0 && builtHistory[0].role === "model") {
     builtHistory = [
       { role: "user", parts: [{ text: "[SESSION_START]" }] },
@@ -22,7 +22,6 @@ export async function generateTurnGemini(
     ];
   }
 
-  // Append the current user message as the final turn
   const contents = [
     ...builtHistory,
     { role: "user", parts: [{ text: userText || "[SESSION_START]" }] },
@@ -31,7 +30,7 @@ export async function generateTurnGemini(
   const result = await getClient().models.generateContent({
     model: "gemini-2.5-flash",
     config: {
-      systemInstruction: YUKI_SYSTEM_PROMPT,
+      systemInstruction: buildSystemPrompt(level),
       responseMimeType: "application/json",
       temperature: 0.7,
     },

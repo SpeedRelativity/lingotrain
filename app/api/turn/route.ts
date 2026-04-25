@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateTurn } from "@/lib/llm/provider";
+import { LEVELS, type Level } from "@/lib/llm/schema";
 import {
   getConversationHistory,
   saveTurn,
@@ -8,46 +9,37 @@ import {
 } from "@/lib/db/queries";
 
 export async function POST(req: NextRequest) {
-  const { sessionId, userId, userText, turnIndex } = await req.json();
+  const { sessionId, userId, userText, turnIndex, level } = await req.json();
 
   if (!sessionId || !userId) {
     return NextResponse.json({ error: "Missing sessionId or userId" }, { status: 400 });
   }
 
-  // Save the user's turn first
-  let userTurnId: string | null = null;
-  if (userText) {
-    const userTurn = await saveTurn(
-      sessionId,
-      turnIndex,
-      "user",
-      userText,
-      "" // no EN for user turns
-    );
-    userTurnId = userTurn.id;
-  }
+  const safeLevel: Level = LEVELS.includes(level) ? level : "beginner";
 
-  // Fetch full history for LLM context
   const history = await getConversationHistory(sessionId);
 
-  // Generate Yuki's response
-  const response = await generateTurn(userText ?? "", history);
+  let userTurnId: string | null = null;
+  if (userText) {
+    const userTurn = await saveTurn(sessionId, turnIndex, "user", userText, "");
+    userTurnId = userTurn.id;
+    history.push({ role: "user", text: userText });
+  }
 
-  // Save Yuki's turn
+  const response = await generateTurn(userText ?? "", history, safeLevel);
+
   const yukiTurn = await saveTurn(
     sessionId,
-    turnIndex + 1,
+    turnIndex + (userText ? 1 : 0),
     "yuki",
     response.yuki.ja,
     response.yuki.en
   );
 
-  // Persist correction if present
   if (response.correction && userTurnId) {
     await saveCorrection(userTurnId, response.correction);
   }
 
-  // Persist tray items
   if (response.tray_items.length > 0) {
     await saveTrayItems(userId, sessionId, yukiTurn.id, response.tray_items);
   }

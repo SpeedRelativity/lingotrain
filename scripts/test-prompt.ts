@@ -55,7 +55,8 @@ const CASES: TestCase[] = [
       const errors: string[] = [];
       if (!r.correction) errors.push("correction should not be null");
       if (r.correction && r.correction.severity !== "major") errors.push("severity should be major");
-      if (r.correction && !r.correction.corrected.includes("に")) errors.push("corrected form should use に particle");
+      // Both に and へ are correct replacements for を when going somewhere
+      if (r.correction && !r.correction.corrected.includes("に") && !r.correction.corrected.includes("へ")) errors.push("corrected form should use に or へ particle (not を)");
       return errors;
     },
   },
@@ -146,7 +147,7 @@ const CASES: TestCase[] = [
     ],
     validate: (r) => {
       const errors: string[] = [];
-      if (!Array.isArray(r.yuki.ja_with_furigana)) errors.push("ja_with_furigana must be array");
+      if (!Array.isArray(r.yuki.tokens)) errors.push("tokens must be array");
       if (!r.yuki.en) errors.push("yuki.en is required");
       if (typeof r.meta.difficulty_adjusted !== "boolean") errors.push("difficulty_adjusted must be boolean");
       if (!r.meta.topic) errors.push("meta.topic is required");
@@ -165,7 +166,7 @@ async function runCase(tc: TestCase): Promise<boolean> {
   process.stdout.write(`  Case ${tc.id}: ${tc.description}... `);
 
   try {
-    const result = await generateTurnGemini(tc.userText, tc.history);
+    const result = await generateTurnGemini(tc.userText, tc.history, "beginner");
 
     // Additional schema check: ensure no raw markdown fences
     // (already handled by JSON.parse, but double check)
@@ -209,8 +210,8 @@ async function main() {
     const ok = await runCase(tc);
     if (ok) passed++;
     else failed++;
-    // Small delay to avoid rate limiting
-    await new Promise((r) => setTimeout(r, 1000));
+    // 13s delay — free tier limit is 5 req/min (one per 12s)
+    await new Promise((r) => setTimeout(r, 13000));
   }
 
   console.log(`\n${BOLD}Results:${RESET} ${GREEN}${passed} passed${RESET} / ${failed > 0 ? RED : ""}${failed} failed${RESET}`);

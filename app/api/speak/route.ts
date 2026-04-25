@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { synthesizeSpeech } from "@/lib/audio/tts";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const { text } = await req.json();
 
