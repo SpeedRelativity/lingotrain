@@ -1,6 +1,6 @@
 "use client";
 import { create } from "zustand";
-import type { TurnResponse } from "@/lib/llm/schema";
+import type { TurnResponse, Level } from "@/lib/llm/schema";
 
 export type ConversationTurn =
   | { role: "yuki"; response: TurnResponse; id: string }
@@ -15,23 +15,27 @@ interface ConversationState {
   mode: UIMode;
   turnIndex: number;
   latestResponse: TurnResponse | null;
+  level: Level;
 
   setSession: (sessionId: string, userId: string) => void;
+  setLevel: (level: Level) => void;
   addUserTurn: (text: string) => void;
   addYukiTurn: (response: TurnResponse) => void;
   setMode: (mode: UIMode) => void;
   reset: () => void;
 }
 
-export const useConversationStore = create<ConversationState>((set, get) => ({
+export const useConversationStore = create<ConversationState>((set) => ({
   sessionId: null,
   userId: null,
   turns: [],
   mode: "idle",
   turnIndex: 0,
   latestResponse: null,
+  level: "beginner",
 
   setSession: (sessionId, userId) => set({ sessionId, userId }),
+  setLevel: (level) => set({ level }),
 
   addUserTurn: (text) =>
     set((s) => ({

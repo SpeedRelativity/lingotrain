@@ -1,35 +1,42 @@
 import { generateTurnGemini } from "./providers/gemini";
 import { generateTurnGroq } from "./providers/groq";
-import { TurnResponseSchema, type TurnResponse } from "./schema";
+import { TurnResponseSchema, type TurnResponse, type Level } from "./schema";
+import { incrementGemini, incrementTurns } from "@/lib/usage";
 
 export type { TurnResponse };
 
 export async function generateTurn(
   userText: string,
-  history: Array<{ role: "user" | "yuki"; text: string }>
+  history: Array<{ role: "user" | "yuki"; text: string }>,
+  level: Level = "beginner"
 ): Promise<TurnResponse> {
+  incrementTurns();
   try {
-    return await generateTurnGemini(userText, history);
+    const result = await generateTurnGemini(userText, history, level);
+    incrementGemini();
+    return result;
   } catch (primaryError) {
     console.error("[LLM] Gemini failed, falling back to Groq:", primaryError);
     try {
-      return await generateTurnGroq(userText, history);
+      return await generateTurnGroq(userText, history, level);
     } catch (fallbackError) {
       console.error("[LLM] Groq fallback also failed:", fallbackError);
-      // Return a minimal safe response so the UI doesn't crash
       return TurnResponseSchema.parse({
         yuki: {
           ja: "すみません、もう一度言ってもらえますか？",
-          ja_with_furigana: [{ text: "すみません、もう一度言ってもらえますか？" }],
+          tokens: [{ surface: "すみません、もう一度言ってもらえますか？", known: true }],
           en: "Sorry, could you say that again?",
           romaji: "Sumimasen, mou ichido itte moraemasu ka?",
         },
+        correction_type: "none",
         correction: null,
+        better_way: null,
         tray_items: [],
         meta: {
           difficulty_adjusted: false,
           topic: "unknown",
           suggested_next_action: "clarify",
+          proactive_teach: false,
         },
       });
     }

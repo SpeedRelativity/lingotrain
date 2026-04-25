@@ -1,15 +1,16 @@
 import Groq from "groq-sdk";
-import { YUKI_SYSTEM_PROMPT } from "../prompts/yuki-system";
-import { TurnResponseSchema, type TurnResponse } from "../schema";
+import { buildSystemPrompt } from "../prompts/yuki-system";
+import { TurnResponseSchema, type TurnResponse, type Level } from "../schema";
 
 const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function generateTurnGroq(
   userText: string,
-  history: Array<{ role: "user" | "yuki"; text: string }>
+  history: Array<{ role: "user" | "yuki"; text: string }>,
+  level: Level
 ): Promise<TurnResponse> {
   const messages: Groq.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: YUKI_SYSTEM_PROMPT },
+    { role: "system", content: buildSystemPrompt(level) },
     ...history.map((turn) => ({
       role: (turn.role === "user" ? "user" : "assistant") as "user" | "assistant",
       content: turn.text,

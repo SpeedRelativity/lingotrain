@@ -1,3 +1,5 @@
+import { incrementElevenLabs } from "@/lib/usage";
+
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
 // Audition voices at elevenlabs.io and set this to a Japanese-capable voice ID
 const VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM";
@@ -31,5 +33,6 @@ export async function synthesizeSpeech(text: string): Promise<ReadableStream<Uin
     throw new Error(`ElevenLabs TTS error ${response.status}: ${err}`);
   }
 
+  incrementElevenLabs(text.length);
   return response.body!;
 }
