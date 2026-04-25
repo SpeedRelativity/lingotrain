@@ -64,8 +64,8 @@ export const TurnResponseSchema = z.object({
     romaji: z.string().optional(),
   }),
   correction_type: CorrectionTypeSchema,  // "mistake" | "upgrade" | "none"
-  correction: CorrectionSchema.nullable(),
-  better_way: BetterWaySchema.nullable(),
+  correction: CorrectionSchema.nullish(),
+  better_way: BetterWaySchema.nullish(),
   tray_items: z.array(TrayItemSchema),
   meta: z.object({
     difficulty_adjusted: z.boolean(),
